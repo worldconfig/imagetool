@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>图片尺寸调整器（SAKURA）</title>
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>图片尺寸调整器（SAKURA） <span class="version">v2.1</span></h1>
+      <p class="subtitle">拖拽 / 粘贴 / 右键菜单收集图片</p>
+    </header>
+
+    <div class="drop-zone" id="dropZone" tabindex="0" role="button" aria-label="添加图片">
+      <div class="drop-icon" aria-hidden="true">🖼️</div>
+      <p class="drop-main">把图片拖到这里，或按 Ctrl+V 粘贴</p>
+      <p class="drop-hint">支持本地文件、整个文件夹、网页图片、剪贴板截图</p>
+      <input type="file" id="fileInput" multiple accept="image/*" hidden>
+      <button type="button" id="browseButton">选择本地文件</button>
+    </div>
+
+    <section class="settings">
+      <div class="setting-group">
+        <label for="customWidth">目标尺寸</label>
+        <div class="custom-size">
+          <input type="number" id="customWidth" placeholder="宽" min="1" max="16384">
+          <span aria-hidden="true">×</span>
+          <input type="number" id="customHeight" placeholder="高" min="1" max="16384">
+          <button type="button" id="applyCustom">应用</button>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <label>尺寸预设</label>
+        <div class="preset-list" id="presetList"></div>
+        <div class="row sub-row">
+          <input type="text" id="presetName" placeholder="预设名称（可留空）">
+          <button type="button" id="savePresetBtn">存为预设</button>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <label for="convertMode">转换模式</label>
+        <select id="convertMode">
+          <option value="resize">调整尺寸（可同时转格式）</option>
+          <option value="format_only">仅转格式（保持原尺寸）</option>
+        </select>
+      </div>
+
+      <div class="setting-group" id="aspectGroup">
+        <label for="aspectMode">尺寸适配方式</label>
+        <select id="aspectMode">
+          <option value="contain">等比缩放（长边贴合，不变形）</option>
+          <option value="cover">等比裁剪（填满目标框，居中裁掉多余）</option>
+          <option value="stretch">拉伸（强制变成精确宽高，可能变形）</option>
+        </select>
+      </div>
+
+      <div class="setting-group">
+        <label for="outputFormat">输出格式</label>
+        <select id="outputFormat">
+          <option value="original">保持原格式</option>
+          <option value="jpeg">JPEG</option>
+          <option value="png">PNG</option>
+          <option value="webp">WebP</option>
+        </select>
+        <p class="field-hint" id="formatHint">GIF / SVG / AVIF 等会转为 PNG（动态图会变成静态首帧）</p>
+      </div>
+
+      <div class="setting-group" id="qualityGroup">
+        <label for="quality">画质 <span class="value" id="qualityValue">92%</span></label>
+        <input type="range" id="quality" min="0.3" max="1" step="0.01">
+      </div>
+
+      <div class="setting-group">
+        <label for="groupSize">每几张一组（用于命名）</label>
+        <input type="number" id="groupSize" min="1" max="999" step="1">
+        <p class="field-hint">决定组号怎么递增；序号补零位数 = max(3, 组大小位数)</p>
+      </div>
+
+      <div class="setting-group">
+        <label for="filenameTemplate">命名模板</label>
+        <input type="text" id="filenameTemplate" spellcheck="false" placeholder="{组号}（{序号}）">
+        <p class="field-hint">
+          变量：<code>{组号}</code> <code>{序号}</code> <code>{全局序号}</code> <code>{原名}</code>；
+          也认 <code>{g}</code> <code>{i}</code> <code>{n}</code> <code>{name}</code>。
+          留空则用默认的 <code>{组号}（{序号}）</code>
+        </p>
+        <p class="field-hint" id="templatePreview"></p>
+      </div>
+
+      <div class="setting-group">
+        <label>输出位置</label>
+
+        <label class="inline">
+          <input type="radio" name="outputTarget" id="targetDownloads" value="downloads">
+          <span>浏览器下载目录</span>
+        </label>
+        <div class="row sub-row" id="downloadsRow">
+          <input type="text" id="currentFolder" placeholder="默认：浏览器下载目录">
+          <button type="button" id="saveFolderBtn">保存</button>
+        </div>
+        <p class="field-hint" id="downloadsHint">相对路径，例如 <code>图片/已处理</code>；默认 <code>resized_images</code>，清空则直接存到下载目录</p>
+
+        <label class="inline">
+          <input type="radio" name="outputTarget" id="targetCustom" value="custom">
+          <span>电脑上的自定义文件夹</span>
+        </label>
+        <div class="row sub-row" id="customRow">
+          <input type="text" id="customFolderName" readonly placeholder="尚未选择文件夹">
+          <button type="button" id="pickFolderBtn">选择…</button>
+        </div>
+        <div class="row sub-row" id="reauthRow" hidden>
+          <button type="button" id="reauthFolderBtn">重新授权访问此文件夹</button>
+        </div>
+        <p class="field-hint" id="customHint">可选电脑上任意可写目录（例如 D:\图片\已处理）。浏览器不会把完整路径告诉扩展，所以这里只显示文件夹名。</p>
+
+        <p class="field-hint" id="pathPreview"></p>
+      </div>
+
+      <div class="setting-group checkbox-group">
+        <label class="inline">
+          <input type="checkbox" id="groupSubfolder">
+          <span>按组建立子文件夹</span>
+        </label>
+        <label class="inline">
+          <input type="checkbox" id="autoProcess">
+          <span>添加后自动处理</span>
+        </label>
+        <label class="inline">
+          <input type="checkbox" id="clearAfterProcess">
+          <span>处理完自动清理列表</span>
+        </label>
+        <label class="inline">
+          <input type="checkbox" id="notifyOnDone">
+          <span>处理完成发系统通知</span>
+        </label>
+        <label class="inline">
+          <input type="checkbox" id="persistQueue">
+          <span>记住未处理的列表（关掉侧边栏不丢）</span>
+        </label>
+        <label class="inline">
+          <input type="checkbox" id="pageHint">
+          <span>在网页图片上加拖拽提示</span>
+        </label>
+      </div>
+    </section>
+
+    <section class="list-head">
+      <span id="listSummary">列表为空</span>
+      <span class="item-count" id="itemCount"></span>
+    </section>
+
+    <div class="image-list" id="imageList"></div>
+
+    <div class="progress" id="progress" hidden>
+      <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+      <span class="progress-text" id="progressText"></span>
+    </div>
+
+    <div class="action-buttons">
+      <button type="button" id="processAll" disabled>批量处理</button>
+      <button type="button" id="clearAll">清空列表</button>
+    </div>
+
+    <div class="status" id="status" role="status" aria-live="polite"></div>
+  </div>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+# 构建产物与本地环境
+node_modules/
+*.zip
+*.crx
+*.pem
+*.log
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 本项目的工作目录（含本地笔记，不发布）
+.workbuddy/

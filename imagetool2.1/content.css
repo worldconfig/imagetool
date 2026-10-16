@@ -1,0 +1,10 @@
+/* 网页图片的可拖拽提示：只在悬停时出现，不打扰正常浏览 */
+img.wb-img-hint:hover {
+  outline: 2px dashed #4caf50;
+  outline-offset: 2px;
+  cursor: grab;
+}
+
+img.wb-img-hint:active {
+  cursor: grabbing;
+}
