@@ -145,6 +145,7 @@ mklink /J "%USERPROFILE%\Downloads\resized_images" "D:\图片\已处理"
 │   ├── sidepanel.css
 │   └── icons/             # 扩展图标 16 / 48 / 128
 ├── imagetool2.0/          # 历史版本 v2.0，仅作归档
+├── dev-tests/             # 开发脚本（逻辑测试 + 发版），不参与扩展运行
 ├── CHANGELOG.md
 ├── LICENSE
 └── README.md
@@ -170,6 +171,17 @@ mklink /J "%USERPROFILE%\Downloads\resized_images" "D:\图片\已处理"
 1. 修改源码
 2. 到 `chrome://extensions` 点扩展卡片上的「重新加载」
 3. Service Worker / 侧边栏的日志分别用「检查视图」查看
+
+改完代码先跑一遍逻辑测试（不需要浏览器，约 1 秒）：
+
+```bash
+node dev-tests/smoke.js
+```
+
+它覆盖缩放几何、命名模板、输出格式回落、画布上限、尺寸预设过滤、自定义目录写入等纯逻辑；
+侧边栏界面、下载、文件夹授权这类浏览器行为仍需真机验证。
+
+`dev-tests/` 里还有建 Release 与上传 zip 资产的发版脚本，用法写在各脚本开头的注释里。
 
 ---
 
