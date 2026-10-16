@@ -1,5 +1,6 @@
 # 构建产物与本地环境
 node_modules/
+dev-tests/.dist/
 *.zip
 *.crx
 *.pem
